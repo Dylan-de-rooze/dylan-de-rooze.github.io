@@ -1,0 +1,10 @@
+{
+  "name": "Boulder Training",
+  "short_name": "Boulder",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fff5d7",
+  "theme_color": "#ff5e6c",
+  "orientation": "portrait",
+  "icons": []
+}

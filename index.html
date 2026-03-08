@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Boulder Training</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff5e6c">
+
+<style>
+:root{
+--beige:#fff5d7;
+--coral:#ff5e6c;
+--yellow:#feb300;
+--pink:#ffaaab;
+
+--bg:var(--beige);
+--card:#fff0f1;
+--text:#2e2e2e;
+--accent:var(--coral);
+--accent2:var(--yellow);
+--border:#f0d9c0;
+}
+
+.dark{
+--bg:#2b1c20;
+--card:#40272b;
+--text:#fff5d7;
+--accent:var(--yellow);
+--accent2:var(--pink);
+--border:#553338;
+}
+
+body{
+margin:0;
+font-family:system-ui;
+background:var(--bg);
+color:var(--text);
+padding:20px;
+}
+
+h1{
+text-align:center;
+margin-bottom:20px;
+}
+
+.toggle{
+position:fixed;
+top:15px;
+right:15px;
+background:var(--accent);
+color:#2b1c20;
+padding:6px 12px;
+border-radius:8px;
+cursor:pointer;
+font-size:13px;
+}
+
+.card{
+background:var(--card);
+border-radius:14px;
+padding:18px;
+margin-bottom:18px;
+border:1px solid var(--border);
+}
+
+.daytitle{
+font-weight:600;
+margin-bottom:4px;
+font-size:18px;
+color:var(--accent);
+}
+
+.goal{
+font-size:13px;
+margin-bottom:10px;
+opacity:0.8;
+}
+
+.exercise{
+display:flex;
+align-items:center;
+margin:6px 0;
+gap:10px;
+}
+
+.exercise span{
+flex:1;
+font-size:14px;
+}
+
+.exercise input{
+transform:scale(1.2);
+accent-color:var(--accent);
+}
+
+.info{
+background:var(--accent);
+color:#2b1c20;
+width:20px;
+height:20px;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:50%;
+font-size:12px;
+cursor:pointer;
+}
+
+.progress{
+height:8px;
+background:#e6e6e6;
+border-radius:8px;
+margin-top:10px;
+overflow:hidden;
+}
+
+.dark .progress{
+background:#5a4448;
+}
+
+.bar{
+height:100%;
+width:0%;
+background:var(--accent2);
+transition:width .3s;
+}
+
+button{
+background:var(--accent);
+border:none;
+padding:8px 14px;
+border-radius:8px;
+color:#2b1c20;
+margin-top:8px;
+font-size:13px;
+}
+
+.timer{
+text-align:center;
+font-size:40px;
+font-weight:bold;
+margin:10px 0;
+color:var(--accent);
+}
+
+.phase{
+text-align:center;
+font-size:14px;
+opacity:0.7;
+}
+
+.timer-controls{
+display:flex;
+gap:10px;
+justify-content:center;
+margin-top:10px;
+}
+
+.popup{
+position:fixed;
+top:0;
+left:0;
+right:0;
+bottom:0;
+background:rgba(0,0,0,0.6);
+display:none;
+align-items:center;
+justify-content:center;
+padding:20px;
+}
+
+.popup-box{
+background:var(--card);
+padding:20px;
+border-radius:12px;
+max-width:320px;
+}
+
+.log-entry{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:8px 0;
+border-bottom:1px solid var(--border);
+font-size:14px;
+}
+
+.delete{
+background:none;
+border:none;
+color:var(--accent);
+font-size:16px;
+cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="toggle" onclick="toggleTheme()">mode</div>
+
+<h1>🧗 Boulder Training</h1>
+
+<div id="training"></div>
+
+<div class="card">
+<div class="daytitle">Trainingslog</div>
+<div id="log"></div>
+</div>
+
+<div class="popup" id="popup">
+<div class="popup-box">
+<div id="popupText"></div>
+<br>
+<button onclick="closePopup()">Sluiten</button>
+</div>
+</div>
+
+<script>
+
+const training=[
+
+{
+day:"Training 1 – Spray wall",
+goal:"Doel: maximale kracht en moeilijke bewegingen",
+ex:[
+["5 min traverses","Traverse 5 minuten horizontaal langs de muur om vingers en lichaam op te warmen."],
+["Schouders en polsen mobiliteit","Maak rustige rotaties met schouders en polsen om gewrichten op te warmen."],
+["3 makkelijke boulders","Klim drie makkelijke boulders om je lichaam verder op te warmen."],
+["Spray wall limit problems","Kies 4–6 boulders van 3–5 bewegingen op de spray wall met kleine grepen en slechte voeten."],
+["Hanging knee raises","Hang aan een bar en breng je knieën naar je borst om je core te trainen."],
+["Plank","Steun op onderarmen en tenen en houd je lichaam recht gedurende 45 seconden."]
+]
+},
+
+{
+day:"Training 2 – Hangboard + kracht",
+goal:"Doel: vingerkracht en algemene klimkracht",
+hangboard:true,
+ex:[
+["Hangboard training","Hang 7 seconden en rust 3 seconden. 6 herhalingen = 1 set. Doe 3–4 sets met 2–3 minuten rust."],
+["Pull-ups","Trek jezelf omhoog tot je kin boven de bar komt."],
+["Inverted rows","Trek borst naar bar terwijl je lichaam recht blijft."],
+["Push-ups","Train borst en triceps."],
+["Dumbbell shoulder press","Versterk schouders met dumbbells."],
+["Scapula pull-ups","Trek enkel je schouderbladen naar beneden."]
+]
+},
+
+{
+day:"Training 3 – Volume + project",
+goal:"Doel: techniek en probleemoplossend klimmen",
+ex:[
+["Volume klimmen","Klim 8–12 boulders onder je maximum niveau."],
+["Project boulder","Werk 20–30 minuten aan één moeilijke boulder."],
+["Resistance band rotaties","Versterk schouders met weerstandsband."],
+["Y-T raises","Hef je armen in een Y- en T-vorm om de bovenrug te versterken."]
+]
+}
+]
+
+function build(){
+
+let container=document.getElementById("training")
+
+training.forEach((day,index)=>{
+
+let html=`<div class="card" data-index="${index}">
+<div class="daytitle">${day.day}</div>
+<div class="goal">${day.goal}</div>`
+
+if(day.hangboard){
+
+html+=`
+<div class="timer" id="timer">7</div>
+<div class="phase" id="phase">Hang</div>
+
+<div class="timer-controls">
+<button onclick="startTimer()">Start</button>
+<button onclick="stopTimer()">Stop</button>
+<button onclick="resetTimer()">Reset</button>
+</div>
+<br>
+`
+}
+
+day.ex.forEach(e=>{
+
+html+=`
+<div class="exercise">
+<input type="checkbox" onchange="updateProgress(this)">
+<span>${e[0]}</span>
+<div class="info" onclick="showInfo('${e[1]}')">i</div>
+</div>
+`
+})
+
+html+=`
+<div class="progress">
+<div class="bar"></div>
+</div>
+
+<button onclick="saveTraining(${index})">Training opslaan</button>
+
+</div>`
+
+container.innerHTML+=html
+
+})
+}
+
+function updateProgress(el){
+
+let card=el.closest(".card")
+let checks=card.querySelectorAll("input")
+let done=card.querySelectorAll("input:checked")
+
+let p=(done.length/checks.length)*100
+card.querySelector(".bar").style.width=p+"%"
+}
+
+function saveTraining(index){
+
+let card=document.querySelector(`[data-index="${index}"]`)
+let checks=card.querySelectorAll("input")
+let done=card.querySelectorAll("input:checked")
+
+let progress=Math.round((done.length/checks.length)*100)
+
+let entry={
+date:new Date().toLocaleDateString(),
+training:training[index].day,
+progress:progress
+}
+
+let logs=JSON.parse(localStorage.getItem("trainingLogs")||"[]")
+logs.push(entry)
+
+localStorage.setItem("trainingLogs",JSON.stringify(logs))
+renderLog()
+}
+
+function renderLog(){
+
+let logs=JSON.parse(localStorage.getItem("trainingLogs")||"[]")
+let html=""
+
+logs.slice().reverse().forEach((l,i)=>{
+
+let realIndex=logs.length-1-i
+
+html+=`
+<div class="log-entry">
+<span>${l.date} — ${l.training} — ${l.progress}%</span>
+<button class="delete" onclick="deleteLog(${realIndex})">🗑</button>
+</div>
+`
+})
+
+document.getElementById("log").innerHTML=html
+}
+
+function deleteLog(index){
+
+if(!confirm("Training verwijderen?")) return
+
+let logs=JSON.parse(localStorage.getItem("trainingLogs")||"[]")
+logs.splice(index,1)
+
+localStorage.setItem("trainingLogs",JSON.stringify(logs))
+renderLog()
+}
+
+function showInfo(text){
+popupText.innerText=text
+popup.style.display="flex"
+}
+
+function closePopup(){
+popup.style.display="none"
+}
+
+function toggleTheme(){
+document.body.classList.toggle("dark")
+localStorage.setItem("theme",document.body.classList.contains("dark"))
+}
+
+let interval
+let hang=true
+let time=7
+
+function beep(){
+
+let ctx=new AudioContext()
+let osc=ctx.createOscillator()
+osc.connect(ctx.destination)
+osc.start()
+osc.stop(ctx.currentTime+0.15)
+}
+
+function startTimer(){
+
+clearInterval(interval)
+
+interval=setInterval(()=>{
+
+timer.innerText=time
+phase.innerText=hang?"Hang":"Rust"
+
+time--
+
+if(time<0){
+beep()
+hang=!hang
+time=hang?7:3
+}
+
+},1000)
+}
+
+function stopTimer(){
+clearInterval(interval)
+}
+
+function resetTimer(){
+
+clearInterval(interval)
+hang=true
+time=7
+
+timer.innerText=7
+phase.innerText="Hang"
+}
+
+build()
+renderLog()
+
+if(localStorage.getItem("theme")==="true"){
+document.body.classList.add("dark")
+}
+
+/* Register service worker */
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
+
+</script>
+</body>
+</html>
